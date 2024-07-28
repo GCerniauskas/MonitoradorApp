@@ -2,4 +2,6 @@
     <string name="app_name">monitoradorApp</string>
     <string name="accessibility_service_description">Serviço de acessibilidade (permissão)</string>
     <string name="label_manifest_accessibility">MonitoradorApp voxxmlmanifest</string>
+    <string name="textview">Nome do APP</string>
+    <string name="tempo_de_uso">Tempo total usado</string>
 </resources>

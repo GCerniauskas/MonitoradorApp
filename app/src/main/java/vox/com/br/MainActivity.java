@@ -68,18 +68,4 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-//    private ActivityResultLauncher<String> laucherPermission = registerForActivityResult(
-//            new ActivityResultContracts.RequestPermission(),
-//            result -> {
-//                new ActivityResultCallback<String>() {
-//                    @Override
-//                    public void onActivityResult(String o) {
-//
-//                    }
-//
-//                };
-//            }
-//    );
-
-
 }

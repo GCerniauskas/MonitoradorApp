@@ -1,5 +1,6 @@
 package vox.com.br.model;
 
+import java.time.Duration;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -9,11 +10,11 @@ public class AppAberto {
     private final String nome;
     private String data;
     private Calendar calendar;
-    private List<CharSequence> digitado;
+    private List<String> digitado;
     private int quantidadeDeVezesAberto = 1;
-    private Date usage_status;
+    private Duration usage_status;
 
-    public AppAberto(String nome, String data, Calendar calendar, List<CharSequence> digitado) {
+    public AppAberto(String nome, String data, Calendar calendar, List<String> digitado) {
         this.nome = nome;
         this.data = data;
         this.calendar = calendar;
@@ -21,16 +22,17 @@ public class AppAberto {
     }
 
     // Segundo construtor que atualiza quantidade de vezes usado
-    public AppAberto(AppAberto appAberto, int quantidadeDeVezesAberto) {
+    public AppAberto(AppAberto appAberto, List<String> digitado , String data, Calendar calendar, int quantidadeDeVezesAberto) {
         this.nome = appAberto.nome;
-        this.data = appAberto.data;
-        this.calendar = appAberto.calendar;
-        this.digitado = appAberto.digitado;
+        this.data = data;
+        this.calendar = calendar;
+        this.digitado = digitado;
+        this.usage_status = appAberto.usage_status;
         this.quantidadeDeVezesAberto = quantidadeDeVezesAberto;
     }
 
     // Terceiro construtor que atualiza a tempo usado
-    public AppAberto(AppAberto appAberto, Date usage_status) {
+    public AppAberto(AppAberto appAberto, Duration usage_status) {
         this.nome = appAberto.nome;
         this.data = appAberto.data;
         this.calendar = appAberto.calendar;
@@ -39,7 +41,14 @@ public class AppAberto {
         this.usage_status = usage_status;
     }
 
-
+    public AppAberto(AppAberto appAberto, List<String> digitado) {
+        this.nome = appAberto.nome;
+        this.data = appAberto.data;
+        this.calendar = appAberto.calendar;
+        this.digitado = digitado;
+        this.quantidadeDeVezesAberto = appAberto.quantidadeDeVezesAberto;
+        this.usage_status = appAberto.usage_status;
+    }
 
     // Getters
     public String getNome() {
@@ -54,7 +63,7 @@ public class AppAberto {
         return calendar;
     }
 
-    public List<CharSequence> getDigitado() {
+    public List<String> getDigitado() {
         return digitado;
     }
 
@@ -62,7 +71,7 @@ public class AppAberto {
         return quantidadeDeVezesAberto;
     }
 
-    public Date getUsage_status() {
+    public Duration getUsage_status() {
         return usage_status;
     }
 

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/info_screen_nome_do_app_fixo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="162dp"
+
+        android:layout_marginTop="44dp"
+        android:layout_marginEnd="162dp"
+        android:layout_marginBottom="57dp"
+        android:text="@string/textview"
+        app:layout_constraintBottom_toTopOf="@+id/info_screen_tempo_de_uso_fixo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/info_screen_tempo_de_uso_fixo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="147dp"
+        android:layout_marginTop="58dp"
+        android:layout_marginEnd="147dp"
+        android:text="@string/tempo_de_uso"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/info_screen_nome_do_app_fixo" />
+
+    <ListView
+        android:id="@+id/info_screen_listView"
+        android:layout_width="415dp"
+        android:layout_height="447dp"
+        android:layout_marginTop="144dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/info_screen_tempo_de_uso_fixo" />
+
+    <TextView
+        android:id="@+id/info_screen_lista_dos_itens_digitado"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="147dp"
+        android:layout_marginTop="125dp"
+        android:layout_marginEnd="148dp"
+        android:text="O que você digitou"
+        app:layout_constraintBottom_toTopOf="@+id/info_screen_listView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/info_screen_tempo_de_uso_fixo" />
+
+    <TextView
+        android:id="@+id/info_screen_tempo_de_uso_alterar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="104dp"
+        android:text="TextView"
+        app:layout_constraintBottom_toTopOf="@+id/info_screen_lista_dos_itens_digitado"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/info_screen_tempo_de_uso_fixo" />
+
+    <TextView
+        android:id="@+id/info_screen_nome_do_app_alterar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="176dp"
+        android:layout_marginTop="1dp"
+        android:layout_marginEnd="177dp"
+        android:layout_marginBottom="40dp"
+        android:text="TextView"
+        app:layout_constraintBottom_toTopOf="@+id/info_screen_tempo_de_uso_fixo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/info_screen_nome_do_app_fixo" />
+
+    <TextView
+        android:id="@+id/qtd_vezes_aberta_fixo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="118dp"
+        android:layout_marginTop="22dp"
+        android:layout_marginEnd="119dp"
+        android:layout_marginBottom="63dp"
+        android:text="Quantidade de vezes aberta"
+        app:layout_constraintBottom_toTopOf="@+id/info_screen_lista_dos_itens_digitado"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/info_screen_tempo_de_uso_alterar" />
+
+    <TextView
+        android:id="@+id/qtd_vezes_aberta_alterar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="174dp"
+        android:layout_marginTop="1dp"
+        android:layout_marginEnd="179dp"
+        android:layout_marginBottom="43dp"
+        android:text="TextView"
+        app:layout_constraintBottom_toTopOf="@+id/info_screen_lista_dos_itens_digitado"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/qtd_vezes_aberta_fixo" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
