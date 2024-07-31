@@ -7,9 +7,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
@@ -36,7 +34,7 @@ public class AppAbertoDao {
             if (apps.contains(appAberto)) {
                 int indexDoApp = apps.indexOf(appAberto);
                 AppAberto appASerModificado = apps.get(indexDoApp);
-                AppAberto appAbertoModificado = new AppAberto(appASerModificado, appAberto.getDigitado(), appAberto.getData(), appAberto.getCalendar(), appASerModificado.getQuantidadeDeVezesAberto() + 1);
+                AppAberto appAbertoModificado = new AppAberto(appASerModificado, appASerModificado.getDigitado(), appAberto.getData(), appAberto.getCalendar(), appASerModificado.getQuantidadeDeVezesAberto() + 1);
                 apps.set(indexDoApp, appAbertoModificado);
             } else if ( // Se o item não existe preciso verificar se não está colocando itens que não são um "app"
                     !apps.contains(appAberto) && // se não existir na lista
@@ -65,7 +63,7 @@ public class AppAbertoDao {
         if (appAberto.getDigitado().get(0) != null) {
             appsListaDeDigitado.add(appAberto.getDigitado().get(0));
         } else {
-            Log.e(TAG, "atualizarDigitados: algo deu errado aqui :/" );
+            Log.e(TAG, "atualizarDigitados: algo deu errado aqui :/");
         }
 
         AppAberto appModificado = new AppAberto(_apps, appsListaDeDigitado);
@@ -78,10 +76,6 @@ public class AppAbertoDao {
     // Funções do Apps
     public List<AppAberto> getTodos() {
         return new ArrayList<>(apps);
-    }
-
-    public AppAberto getAppById(int id) {
-        return apps.get(id);
     }
 
     public void atualizarHorario(@NonNull AppAberto ultimoAppAberto, AppAberto appAbertoAtual) {
@@ -106,7 +100,7 @@ public class AppAbertoDao {
 
             AppAberto appASerModificado = new AppAberto(ultimoAppAberto, sum);
             apps.set(indexDoApp, appASerModificado);
-        }else {
+        } else {
             AppAberto appASerModificado = new AppAberto(ultimoAppAberto, duration);
             apps.set(indexDoApp, appASerModificado);
         }
