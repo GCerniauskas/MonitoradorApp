@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ChatWhats {
     public long id;
@@ -15,8 +16,13 @@ public class ChatWhats {
         this.nome = nome;
     }
 
-    public ChatWhats() {
+    public ChatWhats(ChatWhats chatWhats) {
+        this.id = chatWhats.getId();
+        this.nome = chatWhats.getNome();
+        this.mensagens = chatWhats.getMensagens();
+    }
 
+    public ChatWhats() {
     }
 
     public long getId() {
@@ -53,4 +59,16 @@ public class ChatWhats {
                 '}';
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ChatWhats chatWhats = (ChatWhats) o;
+        return Objects.equals(nome, chatWhats.nome);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(nome);
+    }
 }

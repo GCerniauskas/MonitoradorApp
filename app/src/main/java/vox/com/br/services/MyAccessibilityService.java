@@ -7,6 +7,7 @@ import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -16,6 +17,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 
 import vox.com.br.dao.AppAbertoDao;
 import vox.com.br.dao.ChatWhatsDao;
@@ -23,14 +29,19 @@ import vox.com.br.model.AppAberto;
 import vox.com.br.model.ChatWhats;
 import vox.com.br.model.Message;
 
+// Foi mal pelo código ruim, com tempo pode ter certeza que vou melhorar
 public class MyAccessibilityService extends AccessibilityService {
 
-    // Foi mal pelo código ruim, com tempo pode ter certeza que vou melhorar (pelo menos está funcionando)
+    boolean scrollstate = false;
+    private final Timer timer = new Timer();
+
+    private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+
     // Quando acontecer um Evento de acessibilidade, esse código é executado
     @Override
     public void onAccessibilityEvent(AccessibilityEvent accessibilityEvent) {
 
-        Log.e(TAG, "onAccessibilityEvent: " + accessibilityEvent.getEventType());
+        Log.e(TAG, "onAccessibilityEvent Type:" + accessibilityEvent.getEventType());
 
         // Pegando uma Instância do AppAbertoDao para receber e popular os dados
         AppAbertoDao appAbertoDao = new AppAbertoDao();
@@ -82,7 +93,48 @@ public class MyAccessibilityService extends AccessibilityService {
 
         }
 
-        // Se o evento for do tipo TYPE_WINDOW_CONTENT_CHANGED -------------------------------------
+        // todo verificar quando o usuario para de scrollar a tela
+        // Se o evento for do tipo TYPE_VIEW_SCROLLED ----------------------------------------------
+        if (AccessibilityEvent.TYPE_VIEW_SCROLLED == accessibilityEvent.getEventType()) {
+            Log.e(TAG, "OnTYPE_VIEW_SCROLLED: ");
+
+            boolean teste = executorService.isShutdown();
+            if(executorService.isShutdown()) {
+                Log.e(TAG, "onAccessibilityEvent: Não terminou" );
+                executorService.schedule(() -> Log.e(TAG, "teste: " ), 5000, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } else {
+                executorService.shutdownNow();
+                Log.e(TAG, "onAccessibilityEvent: " + executorService.shutdownNow());
+                executorService.schedule(() -> Log.e(TAG, "teste: " ), 5000, java.util.concurrent.TimeUnit.MILLISECONDS);
+            }
+//            // Se False quer dizer que n está rodando
+//            if (!scrollstate) {
+//                scrollstate = true;
+//
+//                timer.schedule(new TimerTask() {
+//                    @Override
+//                    public void run() {
+//                        scrollstate = false;
+//                        Log.e(TAG, "Time's up: ");
+//                    }
+//                }, 1000);
+//            } else {
+//                timer.;
+//                timer.schedule(new TimerTask() {
+//                    @Override
+//                    public void run() {
+//                        scrollstate = false;
+//                        Log.e(TAG, "time's up: ");
+//                    }
+//                }, 1000);
+//            }
+//
+//            Log.e(TAG, "onAccessibilityEvent: " + timer);
+
+
+        }
+
+        //Se o evento for do tipo TYPE_WINDOW_CONTENT_CHANGED -------------------------------------
         if (AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED == accessibilityEvent.getEventType()) {
             Log.e(TAG, "OnTYPE_WINDOW_CONTENT_CHANGED: ");
             try {
@@ -96,7 +148,9 @@ public class MyAccessibilityService extends AccessibilityService {
                     // Verifica se está no chat para tentar resgatar as mensagens
                     if (verificaSeEstaNoChat(getRootInActiveWindow(), 1)) {
 //                        logNodeHeirarchy(getRootInActiveWindow(), 0);
-                        getChat(getRootInActiveWindow(),0);
+                        getChat(getRootInActiveWindow(), 0);
+                        ChatWhatsDao chatWhatsDao = new ChatWhatsDao();
+                        Log.e(TAG, "onAccessibilityEvent: " + chatWhatsDao.getTodos());
                     }
 
                 }
@@ -197,7 +251,8 @@ public class MyAccessibilityService extends AccessibilityService {
                 AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED |
                         AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED |
                         AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED |
-                        AccessibilityEvent.TYPE_VIEW_CLICKED
+                        AccessibilityEvent.TYPE_VIEW_CLICKED |
+                        AccessibilityEvent.TYPE_VIEW_TARGETED_BY_SCROLL
         ;
 
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK;
@@ -214,7 +269,8 @@ public class MyAccessibilityService extends AccessibilityService {
 
         if (nodeInfo.getChild(0) == null) return false;
         nodeInfo = nodeInfo.getChild(0);
-        if (nodeInfo.getClassName().toString().equals("android.widget.LinearLayout") && nodeInfo.getChildCount() == 2 && depth == 6) return true;
+        if (nodeInfo.getClassName().toString().equals("android.widget.LinearLayout") && nodeInfo.getChildCount() == 2 && depth == 6)
+            return true;
         depth++;
 
         return verificaSeEstaNoChat(nodeInfo, depth);
@@ -234,11 +290,10 @@ public class MyAccessibilityService extends AccessibilityService {
         logString += "Text: " + nodeInfo.getText() + " " + " Content-Description: " + nodeInfo.getContentDescription() + " ClassName: " + nodeInfo.getClassName().toString() + " Depth: " + depth;
 
 
-
         if (depth == 11 && className.equals("android.view.ViewGroup")) {
-            Log.e(TAG, "logNodeHeirarchy: " + contar(nodeInfo) );
+            Log.e(TAG, "logNodeHeirarchy: " + contar(nodeInfo));
         }
-        Log.e(TAG, "logNodeHeirarchy: " + logString );
+        Log.e(TAG, "logNodeHeirarchy: " + logString);
         for (int i = 0; i < nodeInfo.getChildCount(); ++i) {
             logNodeHeirarchy(nodeInfo.getChild(i), depth + 1);
         }
@@ -264,6 +319,8 @@ public class MyAccessibilityService extends AccessibilityService {
     public static void getChat(AccessibilityNodeInfo nodeInfo, int depth) {
         if (nodeInfo == null) return;
 
+        ChatWhatsDao chatWhatsDao = new ChatWhatsDao();
+
         String className = nodeInfo.getClassName().toString();
 
         if (depth == 11 && className.equals("android.widget.FrameLayout") && nodeInfo.getChild(0).getClassName().toString().equals("android.widget.TextView") && nomeDoChat.getMensagens().isEmpty()) {
@@ -279,15 +336,18 @@ public class MyAccessibilityService extends AccessibilityService {
                 e.printStackTrace();
             }
 
+            // Criando o chat
             nomeDoChat.setNome(chat.getText().toString());
             nomeDoChat.setId(sourceNodeId);
-            Log.e(TAG, "getChat: " + chat );
+
+            // Salvando o chat (nessa função verifica se já existe
+            chatWhatsDao.salvar(nomeDoChat);
+            Log.e(TAG, "getChat: " + chat);
         }
 
         if (depth == 11 && className.equals("android.view.ViewGroup")) {
 
             AccessibilityNodeInfo depth10ListView = nodeInfo.getParent();
-
 
             // Pegando o ID
             long sourceNodeId = -1;
@@ -303,11 +363,12 @@ public class MyAccessibilityService extends AccessibilityService {
             message.setId(sourceNodeId);
             getAnything(nodeInfo, message);
 
-            // todo adicionar a mensagem no chat (fazer uma função atualizar())
-            nomeDoChat.getMensagens().add(message);
+//            ChatWhats chatDao = chatWhatsDao.getChatById(nomeDoChat.id);
+//
+//            chatDao.mensagens.add(message);
+            chatWhatsDao.atualizarChatComMensagem(nomeDoChat, message);
 
-
-            Log.e(TAG, "getChat: " + message );
+            Log.e(TAG, "getChat: " + message);
         }
 
         for (int i = 0; i < nodeInfo.getChildCount(); ++i) {
@@ -319,9 +380,11 @@ public class MyAccessibilityService extends AccessibilityService {
 
         if (nodeInfo == null) return;
 
+        // Pega o texto e a descrição
         CharSequence text = nodeInfo.getText();
         CharSequence description = nodeInfo.getContentDescription();
 
+        // Se existir algum texto ou descrição, adiciona na lista
         if (text != null) {
             message.addMessage(text.toString());
         }

@@ -77,6 +77,7 @@ public class AppAbertoDao {
 
         AppAberto appModificado = new AppAberto(_apps, appsListaDeDigitado);
 
+
         // Substituindo
         apps.set(indexDoApp, appModificado);
 
