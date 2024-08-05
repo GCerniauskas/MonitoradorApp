@@ -1,9 +1,14 @@
 package vox.com.br.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Message {
-    public String texto;
+    public long id ;
+    public List<String> tudo = new ArrayList<>();
+    public String texto ;
     public String horario;
-    public String data;
+    public String data ;
     public static Estado estado;
 
     public enum Estado {
@@ -28,6 +33,18 @@ public class Message {
         return estado;
     }
 
+    public long getId() {
+        return id;
+    }
+
+    public void addMessage(String texto) {
+        tudo.add(texto);
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
     public void setTexto(String texto) {
         this.texto = texto;
     }
@@ -47,12 +64,12 @@ public class Message {
     @Override
     public String toString() {
         return "Message{" +
-                "texto='" + texto + '\'' +
+                "id=" + id +
+                ", tudo=" + tudo +
+                ", texto='" + texto + '\'' +
                 ", horario='" + horario + '\'' +
                 ", data='" + data + '\'' +
-                ", estado=" + estado +
                 '}';
     }
-
 }
 
