@@ -67,6 +67,8 @@ public class AppAbertoDao {
                 .findFirst()
                 .orElse(-1);
 
+        if (indexDoApp == -1) return;
+
         AppAberto _apps = apps.get(indexDoApp);
         List<String> appsListaDeDigitado = _apps.getDigitado();
         if (appAberto.getDigitado().get(0) != null) {
