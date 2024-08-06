@@ -1,9 +1,5 @@
 package vox.com.br.dao;
 
-import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
-
-import android.util.Log;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -32,30 +28,22 @@ public class ChatWhatsDao {
         ChatWhats _chat = chats.get(indexDoApp);
         List<Message> messages = _chat.getMensagens();
 
+        // For para verificar se as mensagens do chat é igual a mensagem atual
         for (int i = 0; i < messages.size(); i++ ) {
             Message msgIndexAtual = messages.get(i);
-            boolean b = msgIndexAtual.tudo.toString().equals(message.tudo.toString());
-//            Log.e(TAG, "atualizarChatComMensagem: " + b );
+            boolean b = msgIndexAtual.mensagem.toString().equals(message.mensagem.toString());
+            if (!b) {
+                // Adiciona msg...
+            }
         }
 
-        if (!messages.contains(message.tudo)) {
-            _chat.mensagens.add(message);
-//            chats.set(indexDoApp, chatWhats);
-        }
-
-
+        // Sempre adiciona a mensagem...
+        _chat.mensagens.add(message);
 
     }
 
     public List<ChatWhats> getTodos() {
         return new ArrayList<>(chats);
-    }
-
-    public ChatWhats getChatById(long id) {
-        return chats.stream()
-                .filter(chat -> chat.getId() == id)
-                .findFirst()
-                .orElse(null);
     }
 
 }

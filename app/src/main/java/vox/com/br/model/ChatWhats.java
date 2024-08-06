@@ -7,30 +7,11 @@ import java.util.List;
 import java.util.Objects;
 
 public class ChatWhats {
-    public long id;
     public String nome;
     public List<Message> mensagens = new ArrayList<>();
 
-    public ChatWhats(long id, String nome) {
-        this.id = id;
+    public ChatWhats(String nome) {
         this.nome = nome;
-    }
-
-    public ChatWhats(ChatWhats chatWhats) {
-        this.id = chatWhats.getId();
-        this.nome = chatWhats.getNome();
-        this.mensagens = chatWhats.getMensagens();
-    }
-
-    public ChatWhats() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
     }
 
     public String getNome() {
@@ -45,16 +26,11 @@ public class ChatWhats {
         return mensagens;
     }
 
-    public void setMensagens(List<Message> mensagens) {
-        this.mensagens = mensagens;
-    }
-
     @NonNull
     @Override
     public String toString() {
         return "ChatWhats{" +
-                "id=" + id +
-                ", nome='" + nome + '\'' +
+                "nome='" + nome + '\'' +
                 ", mensagens=" + mensagens +
                 '}';
     }

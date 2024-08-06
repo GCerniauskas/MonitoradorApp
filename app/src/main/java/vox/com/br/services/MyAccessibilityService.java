@@ -11,23 +11,18 @@ import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import vox.com.br.dao.AppAbertoDao;
 import vox.com.br.dao.ChatWhatsDao;
 import vox.com.br.model.AppAberto;
 import vox.com.br.model.ChatWhats;
 import vox.com.br.model.Message;
-import vox.com.br.utils.MyTimerTask;
 
 // Foi mal pelo código ruim, com tempo pode ter certeza que vou melhorar
 public class MyAccessibilityService extends AccessibilityService {
@@ -35,38 +30,14 @@ public class MyAccessibilityService extends AccessibilityService {
     // Testes para verificar se o scroll parou
     boolean scrollstate = false;
 
-    final ExecutorService executorService = Executors.newScheduledThreadPool(10);
-    Runnable runnableTask = () -> {
-        try {
-            TimeUnit.MILLISECONDS.sleep(300);
-            Log.e(TAG, "Função executada!"); // Função só pode ser executada, caso parou de scrollar a tela
-            scrollstate = false;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    };
-
     private final Timer timer = new Timer();
     TimerTask timerTask = new TimerTask() {
         @Override
         public void run() {
-            Log.e(TAG, "executado! " );
+            Log.e(TAG, "executado! ");
             scrollstate = false;
         }
     };
-
-
-    final Thread thread = new Thread(() -> {
-        while (scrollstate) {
-            try {
-                Thread.sleep(2000);
-                Log.e(TAG, "Função executada!"); // Função só pode ser executada, caso parou de scrollar a tela
-                scrollstate = false;
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    });
 
     // Quando acontecer um Evento de acessibilidade, esse código é executado
     @Override
@@ -114,7 +85,7 @@ public class MyAccessibilityService extends AccessibilityService {
                             timerTask = new TimerTask() {
                                 @Override
                                 public void run() {
-                                    Log.e(TAG, "executado! " );
+                                    Log.e(TAG, "executado! ");
                                     getChat(getRootInActiveWindow(), 0);
                                     scrollstate = false;
                                 }
@@ -124,7 +95,7 @@ public class MyAccessibilityService extends AccessibilityService {
                             timerTask = new TimerTask() {
                                 @Override
                                 public void run() {
-                                    Log.e(TAG, "executado! " );
+                                    Log.e(TAG, "executado! ");
                                     getChat(getRootInActiveWindow(), 0);
                                     scrollstate = false;
                                 }
@@ -139,30 +110,6 @@ public class MyAccessibilityService extends AccessibilityService {
                 throw new RuntimeException(e);
             }
 
-        }
-
-        //Se o evento for do tipo TYPE_WINDOW_CONTENT_CHANGED --------------------------------------
-        if (AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED == accessibilityEvent.getEventType()) {
-            Log.e(TAG, "OnTYPE_WINDOW_CONTENT_CHANGED: ");
-            try {
-                ApplicationInfo applicationInfo = packageManager.getApplicationInfo(nomeDoApp, 0);
-                CharSequence applicationLabel = packageManager.getApplicationLabel(applicationInfo);
-
-                //|| applicationLabel.toString().equals("Teams")
-                if (applicationLabel.toString().equals("WhatsApp")) {
-                    Log.e(TAG, "OnTYPE_WINDOW_CONTENT_CHANGED: " + accessibilityEvent.getPackageName());
-
-                    // Verifica se está no chat para tentar resgatar as mensagens
-                    if (verificaSeEstaNoChat(getRootInActiveWindow(), 1)) {
-//                        logNodeHeirarchy(getRootInActiveWindow(), 0);
-//                        getChat(getRootInActiveWindow(), 0);
-//                        ChatWhatsDao chatWhatsDao = new ChatWhatsDao();
-//                        Log.e(TAG, "onAccessibilityEvent: " + chatWhatsDao.getTodos());
-                    }
-                }
-            } catch (PackageManager.NameNotFoundException e) {
-                throw new RuntimeException(e);
-            }
         }
 
         // se o evento for do tipo TYPE_VIEW_TEXT_CHANGED ------------------------------------------
@@ -216,8 +163,6 @@ public class MyAccessibilityService extends AccessibilityService {
                 if (appAbertoDao.getTodosHistorico().isEmpty()) {
                     appAbertoDao.salvarNoHistorico(appAbertoAtual);
                     appAbertoDao.salvar(appAbertoAtual);
-                } else if (accessibilityEvent.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) {
-                    // nada pode acontecer pois o evento é para atualizar o que foi digitado
                 } else { // Executado quando for e evento mudança no estado da tela, e não for a primeira vez iniciando
 
                     // Verificando se mudou o App, Aqui pego o último item no Historico e comparo o app atual.
@@ -328,7 +273,7 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     // Lista de mensagens
-    public static ChatWhats nomeDoChat = new ChatWhats(0, "");
+    public static ChatWhats nomeDoChat = new ChatWhats("");
 
     public static void getChat(AccessibilityNodeInfo nodeInfo, int depth) {
         if (nodeInfo == null) return;
@@ -340,19 +285,8 @@ public class MyAccessibilityService extends AccessibilityService {
         if (depth == 11 && className.equals("android.widget.FrameLayout") && nodeInfo.getChild(0).getClassName().toString().equals("android.widget.TextView") && nomeDoChat.getMensagens().isEmpty()) {
             AccessibilityNodeInfo chat = nodeInfo.getChild(0);
 
-            // Pegando o ID
-            long sourceNodeId = -1;
-            try {
-                Field sourceNodeIdField = AccessibilityNodeInfo.class.getDeclaredField("mSourceNodeId");
-                sourceNodeIdField.setAccessible(true);
-                sourceNodeId = sourceNodeIdField.getLong(chat);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                e.printStackTrace();
-            }
-
             // Criando o chat
             nomeDoChat.setNome(chat.getText().toString());
-            nomeDoChat.setId(sourceNodeId);
 
             // Salvando o chat (nessa função verifica se já existe
             chatWhatsDao.salvar(nomeDoChat);
@@ -362,18 +296,7 @@ public class MyAccessibilityService extends AccessibilityService {
         // Resgatar as mensagens
         if (depth == 11 && className.equals("android.view.ViewGroup")) {
 
-            // Pegando o ID
-            long sourceNodeId = -1;
-            try {
-                Field sourceNodeIdField = AccessibilityNodeInfo.class.getDeclaredField("mSourceNodeId");
-                sourceNodeIdField.setAccessible(true);
-                sourceNodeId = sourceNodeIdField.getLong(nodeInfo);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                e.printStackTrace();
-            }
-
             Message message = new Message();
-            message.setId(sourceNodeId);
             getAnything(nodeInfo, message);
 
             chatWhatsDao.atualizarChatComMensagem(nomeDoChat, message);
