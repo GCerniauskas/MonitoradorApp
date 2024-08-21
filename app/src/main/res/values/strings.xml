@@ -4,4 +4,9 @@
     <string name="label_manifest_accessibility">MonitoradorApp voxxmlmanifest</string>
     <string name="textview">Nome do APP</string>
     <string name="tempo_de_uso">Tempo total usado</string>
+    <string name="service_name">Notification Listener</string>
+    <string name="enable_access_notification">Habilite acesso as notificações</string>
+    <string name="enable_access_notification_dialog_desc">Voce precisa ativar as notificações para que nos podemos fazer o nosso trabalho.</string>
+    <string name="enable_service_dialog_title">Habilite serviço de acessibilidade</string>
+    <string name="enable_service_dialog_desc">Você precisa habilitar o serviço de acessibilidade para nos fazermos o nosso trabalho!</string>
 </resources>

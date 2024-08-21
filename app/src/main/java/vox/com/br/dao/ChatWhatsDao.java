@@ -31,7 +31,7 @@ public class ChatWhatsDao {
         // For para verificar se as mensagens do chat é igual a mensagem atual
         for (int i = 0; i < messages.size(); i++ ) {
             Message msgIndexAtual = messages.get(i);
-            boolean b = msgIndexAtual.mensagem.toString().equals(message.mensagem.toString());
+            boolean b = msgIndexAtual.tudo.toString().equals(message.tudo.toString());
             if (!b) {
                 // Adiciona msg...
             }
@@ -40,10 +40,6 @@ public class ChatWhatsDao {
         // Sempre adiciona a mensagem...
         _chat.mensagens.add(message);
 
-    }
-
-    public List<ChatWhats> getTodos() {
-        return new ArrayList<>(chats);
     }
 
 }
